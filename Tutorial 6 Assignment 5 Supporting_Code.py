@@ -6,7 +6,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from collections import deque
 
-# Set random seed for reproducibility
+# Set random seed for reproducibilityy
 SEED = 42
 np.random.seed(SEED)
 random.seed(SEED)

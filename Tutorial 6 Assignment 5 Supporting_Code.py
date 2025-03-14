@@ -47,10 +47,19 @@ class DQN(nn.Module):
         pass
 
 # Initialize Neural Networks and optimizer for DQN
+model = nn.Sequential(
+    nn.Linear(n_channels, 16),
+    nn.ReLU(),
+    nn.Linear(16, n_channels)
+)
+
 # Sanya TODO: Complete network initialization and optimizer setup
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+criterion = nn.MSELoss()
 
 # Experience Replay Memory for DQN
 # Sanya TODO: Define the replay memory
+replay_memory = deque(maxlen=memory_size)
 
 # Lists to store rewards
 rewards_qlearning = []
@@ -86,51 +95,66 @@ for episode in range(n_episodes):
     # Append reward to rewards_qlearning
     rewards_qlearning.append(reward)
 
-    # DQN
+epsilon = 1.0
+# DQN
     
+# DQN Training Loop
 for episode in range(n_episodes):
+    # Generate a random initial state (one-hot encoded)
     state = np.eye(n_channels)[np.random.choice(n_channels)]
     state_tensor = torch.FloatTensor(state)
 
     # Action selection (epsilon-greedy)
     if np.random.rand() < epsilon:
-        action = np.random.choice(n_channels)  # Explore: choose a random channel
+        action = np.random.choice(n_channels)  # Explore
     else:
         with torch.no_grad():
             q_values = dqn(state_tensor)
-            action = torch.argmax(q_values).item()  # Exploit: choose the channel with the highest Q-value
+            action = torch.argmax(q_values).item()  # Exploit
 
     # Calculate reward
     reward = 1 if np.random.rand() < true_probs[action] else 0
-    print("Reward on channel", action, "is", reward, "for episode #", episode)
+
+    # Generate the next state (one-hot encoded)
+    next_state = np.eye(n_channels)[np.random.choice(n_channels)]
+    next_state_tensor = torch.FloatTensor(next_state)
 
     # Store experience in replay memory
-    next_state = np.eye(n_channels)[np.random.choice(n_channels)]
-    memory.push(state, action, reward, next_state)
+    replay_memory.append((state, action, reward, next_state))
 
     # Train DQN using replay memory
-    if len(memory) >= batch_size:
+    if len(replay_memory) >= batch_size:
         # Sample a batch from replay memory
-        batch = memory.sample(batch_size)
+        batch = random.sample(replay_memory, batch_size)
         states, actions, rewards, next_states = zip(*batch)
 
         # Convert to tensors
         states = torch.FloatTensor(states)
-        actions = torch.LongTensor(actions)
+        actions = torch.LongTensor(actions).unsqueeze(1)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
 
         # Compute Q-values and target Q-values
-        current_q_values = dqn(states).gather(1, actions.unsqueeze(1))
+        current_q_values = dqn(states).gather(1, actions)
         with torch.no_grad():
             next_q_values = target_dqn(next_states).max(1)[0]
             target_q_values = rewards + gamma * next_q_values
 
         # Compute loss and update DQN
-        loss = nn.MSELoss()(current_q_values.squeeze(), target_q_values)
+        loss = criterion(current_q_values.squeeze(), target_q_values)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+    # Update target network periodically
+    if episode % target_update_freq == 0:
+        target_dqn.load_state_dict(dqn.state_dict())
+
+    # Decay epsilon
+    epsilon = max(epsilon_min, epsilon * epsilon_decay)
+
+    # Append reward to rewards_dqn
+    rewards_dqn.append(reward)
 
     # Update target network periodically
     if episode % target_update_freq == 0:
@@ -149,13 +173,13 @@ print("After ", n_episodes, " the Qtable has generated the probabilities: ", Q_t
 
 
 # Moving Average Calculation
-def moving_average(data, window_size):
-    return np.convolve(data, np.ones(window_size) / window_size, mode='valid')
+def moving_average(data, _size):
+    return np.convolve(data, np.ones(_size) / _size, mode='valid')
 
 # Compute moving averages
-window_size = 100
+_size = 100
 q_learning_ma = moving_average(rewards_qlearning, window_size)
-dqn_ma = moving_average(rewards_dqn, window_size)
+dqn_ma = moving_average(rewards_dqn, _size)
 
 # Plot results
 plt.figure(figsize=(10, 5))

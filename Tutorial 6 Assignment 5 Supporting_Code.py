@@ -40,18 +40,17 @@ class DQN(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(DQN, self).__init__()
         # Sanya TODO: Define the neural network layers
-        pass
-
+        self.model = nn.Sequential(
+            nn.Linear(input_dim, 16),  # Input layer
+            nn.ReLU(),                 # Activation function
+            nn.Linear(16, output_dim)  # Output layer
+)
     def forward(self, x):
         # Sanya TODO: Define forward propagation
-        pass
+        return self.model(x)
 
 # Initialize Neural Networks and optimizer for DQN
-model = nn.Sequential(
-    nn.Linear(n_channels, 16),
-    nn.ReLU(),
-    nn.Linear(16, n_channels)
-)
+
 
 # Sanya TODO: Complete network initialization and optimizer setup
 optimizer = optim.Adam(model.parameters(), lr=0.01)
@@ -166,8 +165,8 @@ for episode in range(n_episodes):
     # Append reward to rewards_dqn
     rewards_dqn.append(reward)
     # Currently just adding a number between 0-1 so I can make a graph
-    # rand_int2 = random.randint(0, 1)
-    # rewards_dqn.append(rand_int2)
+    rand_int2 = random.randint(0, 1)
+    rewards_dqn.append(rand_int2)
        
 print("After ", n_episodes, " the Qtable has generated the probabilities: ", Q_table) # Debug
 

@@ -50,14 +50,18 @@ class DQN(nn.Module):
         return self.model(x)
 
 # Initialize Neural Networks and optimizer for DQN
+dqn = DQN(n_channels, n_channels)
+target_dqn = DQN(n_channels, n_channels)
 
 
-# Sanya TODO: Complete network initialization and optimizer setup
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+target_dqn.load_state_dict(dqn.state_dict())
+
+
+# Complete network initialization and optimizer setup
+optimizer = optim.Adam(dqn.parameters(), lr=alpha_dqn)
 criterion = nn.MSELoss()
 
 # Experience Replay Memory for DQN
-# Sanya TODO: Define the replay memory
 replay_memory = deque(maxlen=memory_size)
 
 # Lists to store rewards
@@ -149,36 +153,30 @@ for episode in range(n_episodes):
     if episode % target_update_freq == 0:
         target_dqn.load_state_dict(dqn.state_dict())
 
-    # Decay epsilon
-    epsilon = max(epsilon_min, epsilon * epsilon_decay)
-
-    # Append reward to rewards_dqn
-    rewards_dqn.append(reward)
-
-    # Update target network periodically
-    if episode % target_update_freq == 0:
-        target_dqn.load_state_dict(dqn.state_dict())
 
     # Decay epsilon
     epsilon = epsilon * epsilon_decay
 
+    # Ensure epsilon doesn't go below the min (want to retain a small amount of randomness)
+    if epsilon < epsilon_min:
+        epsilon = epsilon_min
+
     # Append reward to rewards_dqn
     rewards_dqn.append(reward)
     # Currently just adding a number between 0-1 so I can make a graph
-    rand_int2 = random.randint(0, 1)
-    rewards_dqn.append(rand_int2)
+    
        
 print("After ", n_episodes, " the Qtable has generated the probabilities: ", Q_table) # Debug
 
 
 # Moving Average Calculation
-def moving_average(data, _size):
+def moving_average(data, eindow_size):
     return np.convolve(data, np.ones(_size) / _size, mode='valid')
 
 # Compute moving averages
-_size = 100
+window_size = 100
 q_learning_ma = moving_average(rewards_qlearning, window_size)
-dqn_ma = moving_average(rewards_dqn, _size)
+dqn_ma = moving_average(rewards_dqn, window_size)
 
 # Plot results
 plt.figure(figsize=(10, 5))

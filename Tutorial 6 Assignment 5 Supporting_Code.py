@@ -166,8 +166,8 @@ for episode in range(n_episodes):
     # Append reward to rewards_dqn
     rewards_dqn.append(reward)
     # Currently just adding a number between 0-1 so I can make a graph
-    rand_int2 = random.randint(0, 1)
-    rewards_dqn.append(rand_int2)
+    # rand_int2 = random.randint(0, 1)
+    # rewards_dqn.append(rand_int2)
        
 print("After ", n_episodes, " the Qtable has generated the probabilities: ", Q_table) # Debug
 
